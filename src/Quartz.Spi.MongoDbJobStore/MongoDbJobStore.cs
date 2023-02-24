@@ -8,6 +8,7 @@ using Common.Logging;
 using MongoDB.Driver;
 using Quartz.Impl.AdoJobStore;
 using Quartz.Impl.Matchers;
+using Quartz.Simpl;
 using Quartz.Spi.MongoDbJobStore.Models;
 using Quartz.Spi.MongoDbJobStore.Models.Id;
 using Quartz.Spi.MongoDbJobStore.Repositories;
@@ -528,6 +529,29 @@ namespace Quartz.Spi.MongoDbJobStore
                     return TriggerState.Blocked;
                 default:
                     return TriggerState.Normal;
+            }
+        }
+
+        public async Task ResetTriggerFromErrorState(TriggerKey triggerKey, CancellationToken cancellationToken = new CancellationToken())
+        {
+            using (await _lockManager.AcquireLock(LockType.TriggerAccess, InstanceId).ConfigureAwait(false))
+            {
+                var trigger = await _triggerRepository.GetTrigger(triggerKey).ConfigureAwait(false);
+                if (trigger == null) { return; }
+
+                if (trigger.State != Models.TriggerState.Error) { return; }
+
+                var isPaused = await _pausedTriggerGroupRepository.IsTriggerGroupPaused(triggerKey.Group).ConfigureAwait(false);
+
+                if (isPaused)
+                {
+                    trigger.State = Models.TriggerState.Paused;
+                }
+                else
+                {
+                    trigger.State = Models.TriggerState.Waiting;
+                    await _triggerRepository.AddTrigger(trigger);
+                }
             }
         }
 
