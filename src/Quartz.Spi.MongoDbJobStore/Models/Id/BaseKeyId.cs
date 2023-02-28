@@ -1,5 +1,8 @@
-﻿namespace Quartz.Spi.MongoDbJobStore.Models.Id
+﻿using MongoDB.Bson.Serialization.Attributes;
+
+namespace Quartz.Spi.MongoDbJobStore.Models.Id
 {
+    [BsonKnownTypes(typeof(TriggerId), typeof(JobDetailId))]
     internal abstract class BaseKeyId : BaseId
     {
         public string Name { get; set; }
