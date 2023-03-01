@@ -48,11 +48,9 @@ namespace Quartz.Spi.MongoDbJobStore
             JobStoreClassMap.RegisterClassMaps();
         }
 
-        public MongoDbJobStore()
+        public MongoDbJobStore(IMongoClient client)
         {
-            MaxMisfiresToHandleAtATime = 20;
-            RetryableActionErrorLogThreshold = 4;
-            DbRetryInterval = TimeSpan.FromSeconds(15);
+            _client = client;
         }
 
         public string ConnectionString { get; set; }
@@ -63,14 +61,14 @@ namespace Quartz.Spi.MongoDbJobStore
         ///     thread will try to recover at one time (within one transaction).  The
         ///     default is 20.
         /// </summary>
-        public int MaxMisfiresToHandleAtATime { get; set; }
+        public int MaxMisfiresToHandleAtATime { get; set; } = 20;
 
         /// <summary>
         ///     Gets or sets the database retry interval.
         /// </summary>
         /// <value>The db retry interval.</value>
         [TimeSpanParseRule(TimeSpanParseRule.Milliseconds)]
-        public TimeSpan DbRetryInterval { get; set; }
+        public TimeSpan DbRetryInterval { get; set; } = TimeSpan.FromSeconds(15);
 
         /// <summary>
         ///     The time span by which a trigger must have missed its
@@ -95,7 +93,7 @@ namespace Quartz.Spi.MongoDbJobStore
         /// <summary>
         ///     Gets or sets the number of retries before an error is logged for recovery operations.
         /// </summary>
-        public int RetryableActionErrorLogThreshold { get; set; }
+        public int RetryableActionErrorLogThreshold { get; set; } = 4;
 
         protected DateTimeOffset MisfireTime
         {
@@ -125,8 +123,9 @@ namespace Quartz.Spi.MongoDbJobStore
             _schedulerId = new SchedulerId(InstanceId, InstanceName);
             Log.Trace($"Scheduler {_schedulerId} initialize");
 
+            
             var url = new MongoUrl(ConnectionString);
-            _client = new MongoClient(ConnectionString);
+            //_client = new MongoClient(ConnectionString);
             _database = _client.GetDatabase(url.DatabaseName);
             _lockManager = new LockManager(_database, InstanceName, CollectionPrefix);
             _schedulerRepository = new SchedulerRepository(_database, InstanceName, CollectionPrefix);
