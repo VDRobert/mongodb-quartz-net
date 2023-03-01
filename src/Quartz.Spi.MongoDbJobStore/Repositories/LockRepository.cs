@@ -60,8 +60,9 @@ namespace Quartz.Spi.MongoDbJobStore.Repositories
 
         public override async Task EnsureIndex()
         {
-            await Collection.Indexes.CreateOneAsync(IndexBuilder.Ascending(@lock => @lock.AquiredAt),
-                new CreateIndexOptions() {ExpireAfter = TimeSpan.FromSeconds(30)}).ConfigureAwait(false);
+            var builder  =  Builders<Lock>.IndexKeys;
+            var indexModel = new CreateIndexModel<Lock>(builder.Ascending(x => x.AquiredAt));
+            await Collection.Indexes.CreateOneAsync(indexModel).ConfigureAwait(false);
         }
     }
 }
