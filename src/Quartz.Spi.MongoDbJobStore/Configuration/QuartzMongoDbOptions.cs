@@ -4,9 +4,14 @@ namespace Quartz.Spi.MongoDbJobStore.Configuration
 {
     public class QuartzMongoDbOptions : SchedulerBuilder.StoreOptions
     {
-
-        public QuartzMongoDbOptions(PropertiesHolder? parent = null) : base(parent ?? SchedulerBuilder.Create())
+        public QuartzMongoDbOptions() : base(SchedulerBuilder.Create())
         {
+            this.SerializerType = "json";
+        }
+
+        public QuartzMongoDbOptions(PropertiesHolder parent) : base(parent)
+        {
+            this.SerializerType = "json";
         }
 
         public string? InstanceName
@@ -27,10 +32,28 @@ namespace Quartz.Spi.MongoDbJobStore.Configuration
             get => Properties.Get($"{StdSchedulerFactory.PropertyJobStorePrefix}.{StdSchedulerFactory.PropertyDataSourceConnectionString}");
         }
 
+        public string? ConnectionStringName
+        {
+            set => SetProperty($"{StdSchedulerFactory.PropertyJobStorePrefix}.{StdSchedulerFactory.PropertyDataSourceConnectionStringName}", value);
+            get => Properties.Get($"{StdSchedulerFactory.PropertyJobStorePrefix}.{StdSchedulerFactory.PropertyDataSourceConnectionStringName}");
+        }
+
         public string? CollectionPrefix
         {
             set => SetProperty($"{StdSchedulerFactory.PropertyJobStorePrefix}.collectionPrefix", value);
             get => Properties.Get($"{StdSchedulerFactory.PropertyJobStorePrefix}.collectionPrefix");
         }
+
+        public string? DatabaseName
+        {
+            set => SetProperty($"{StdSchedulerFactory.PropertyJobStorePrefix}.databaseName", value);
+            get => Properties.Get($"{StdSchedulerFactory.PropertyJobStorePrefix}.databaseName");
+        }
+
+        public string? SerializerType
+        {
+            set => SetProperty($"quartz.serializer.type", value);
+            get => Properties.Get($"quartz.serializer.type");
+        } 
     }
 }

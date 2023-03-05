@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Misc;
 using Quartz.Impl.AdoJobStore;
 using Quartz.Impl.Matchers;
 using Quartz.Simpl;
@@ -19,6 +20,7 @@ namespace Quartz.Spi.MongoDbJobStore
 {
     public class MongoDbJobStore : IJobStore
     {
+        private readonly MongoClientSettings? _settings;
         private const string KeySignalChangeForTxCompletion = "sigChangeForTxCompletion";
         private const string AllGroupsPaused = "_$_ALL_GROUPS_PAUSED_$_";
 
@@ -28,7 +30,7 @@ namespace Quartz.Spi.MongoDbJobStore
         private static readonly ILog Log = LogManager.GetLogger<MongoDbJobStore>();
         private static long _fireTriggerRecordCounter = DateTime.UtcNow.Ticks;
         private CalendarRepository _calendarRepository;
-        private IMongoClient _client;
+        private IMongoClient? _client;
         private IMongoDatabase _database;
         private FiredTriggerRepository _firedTriggerRepository;
         private JobDetailRepository _jobDetailRepository;
@@ -48,13 +50,18 @@ namespace Quartz.Spi.MongoDbJobStore
             JobStoreClassMap.RegisterClassMaps();
         }
 
-        public MongoDbJobStore(IMongoClient client)
+        public MongoDbJobStore(){}
+
+        public MongoDbJobStore(MongoClientSettings settings, string databaseName)
         {
-            _client = client;
+            _settings = Ensure.IsNotNull(settings, nameof(settings));
+            DatabaseName = Ensure.IsNotNullOrEmpty(databaseName, nameof(databaseName));
         }
 
         public string ConnectionString { get; set; }
         public string CollectionPrefix { get; set; }
+
+        public string DatabaseName { get; set; }
 
         /// <summary>
         ///     Get or set the maximum number of misfired triggers that the misfire handling
@@ -116,17 +123,17 @@ namespace Quartz.Spi.MongoDbJobStore
         public string InstanceName { get; set; }
         public int ThreadPoolSize { get; set; }
 
-        public Task Initialize(ITypeLoadHelper loadHelper, ISchedulerSignaler signaler,
+        public Task Initialize(
+            ITypeLoadHelper loadHelper, 
+            ISchedulerSignaler signaler,
             CancellationToken token = default(CancellationToken))
         {
             _schedulerSignaler = signaler;
             _schedulerId = new SchedulerId(InstanceId, InstanceName);
             Log.Trace($"Scheduler {_schedulerId} initialize");
-
             
-            var url = new MongoUrl(ConnectionString);
-            //_client = new MongoClient(ConnectionString);
-            _database = _client.GetDatabase(url.DatabaseName);
+            SetupDatabase();
+
             _lockManager = new LockManager(_database, InstanceName, CollectionPrefix);
             _schedulerRepository = new SchedulerRepository(_database, InstanceName, CollectionPrefix);
             _jobDetailRepository = new JobDetailRepository(_database, InstanceName, CollectionPrefix);
@@ -136,6 +143,21 @@ namespace Quartz.Spi.MongoDbJobStore
             _calendarRepository = new CalendarRepository(_database, InstanceName, CollectionPrefix);
 
             return Task.FromResult(true);
+        }
+
+        private void SetupDatabase()
+        {
+            if (_settings == null)
+            {
+                var url = new MongoUrl(ConnectionString);
+                _client = new MongoClient(url);
+                _database = _client.GetDatabase(url.DatabaseName);
+            }
+            else
+            {
+                _client = new MongoClient(_settings);
+                _database = _client.GetDatabase(DatabaseName);
+            }
         }
 
         public async Task SchedulerStarted(CancellationToken token = default(CancellationToken))

@@ -1,17 +1,17 @@
 ﻿using System;
-using Quartz;
 
 namespace Quartz.Spi.MongoDbJobStore.Configuration
 {
     public static class QuartzMongoDbExtensions
     {
-        public static void UseMongoDb(this SchedulerBuilder.PersistentStoreOptions options, Action<QuartzMongoDbOptions> configure)
+        public static void UseMongoDb(this SchedulerBuilder.PersistentStoreOptions options, Action<QuartzMongoDbOptions>? configure = null)
         {
-            configure?.Invoke(new QuartzMongoDbOptions(options));
+            var quartzMongoDbOptions = new QuartzMongoDbOptions(options);
+            configure?.Invoke(quartzMongoDbOptions);
         }
 
         public static void UseMongoDbPersistantStorage(
-            this IServiceCollectionQuartzConfigurator configurator, Action<QuartzMongoDbOptions> configure)
+            this IServiceCollectionQuartzConfigurator configurator, Action<QuartzMongoDbOptions>? configure = null)
         {
 
             configurator.UsePersistentStore<MongoDbJobStore>(options =>
