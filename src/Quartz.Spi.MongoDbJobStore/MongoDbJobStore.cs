@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Common.Logging;
 using MongoDB.Driver;
 using MongoDB.Driver.Core.Misc;
+using MongoDB.Driver.Linq;
 using Quartz.Impl.AdoJobStore;
 using Quartz.Impl.Matchers;
 using Quartz.Simpl;
@@ -151,10 +152,12 @@ namespace Quartz.Spi.MongoDbJobStore
             {
                 var url = new MongoUrl(ConnectionString);
                 _client = new MongoClient(url);
+                _client.Settings.LinqProvider = LinqProvider.V2;
                 _database = _client.GetDatabase(url.DatabaseName);
             }
             else
             {
+                _settings.LinqProvider = LinqProvider.V2;
                 _client = new MongoClient(_settings);
                 _database = _client.GetDatabase(DatabaseName);
             }
