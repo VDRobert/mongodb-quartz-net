@@ -32,12 +32,6 @@ namespace Quartz.Spi.MongoDbJobStore.Configuration
             get => Properties.Get($"{StdSchedulerFactory.PropertyJobStorePrefix}.{StdSchedulerFactory.PropertyDataSourceConnectionString}");
         }
 
-        public string? ConnectionStringName
-        {
-            set => SetProperty($"{StdSchedulerFactory.PropertyJobStorePrefix}.{StdSchedulerFactory.PropertyDataSourceConnectionStringName}", value);
-            get => Properties.Get($"{StdSchedulerFactory.PropertyJobStorePrefix}.{StdSchedulerFactory.PropertyDataSourceConnectionStringName}");
-        }
-
         public string? CollectionPrefix
         {
             set => SetProperty($"{StdSchedulerFactory.PropertyJobStorePrefix}.collectionPrefix", value);
