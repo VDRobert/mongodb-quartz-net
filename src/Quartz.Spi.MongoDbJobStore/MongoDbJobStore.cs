@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Common.Logging;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Configuration;
 using MongoDB.Driver.Core.Misc;
 using MongoDB.Driver.Linq;
 using Quartz.Impl.AdoJobStore;
@@ -62,7 +63,7 @@ namespace Quartz.Spi.MongoDbJobStore
         public string ConnectionString { get; set; }
         public string CollectionPrefix { get; set; }
 
-        public string DatabaseName { get; set; }
+        public string? DatabaseName { get; set; }
 
         /// <summary>
         ///     Get or set the maximum number of misfired triggers that the misfire handling
@@ -150,10 +151,10 @@ namespace Quartz.Spi.MongoDbJobStore
         {
             if (_settings == null)
             {
-                var url = new MongoUrl(ConnectionString);
-                _client = new MongoClient(url);
-                _client.Settings.LinqProvider = LinqProvider.V2;
-                _database = _client.GetDatabase(url.DatabaseName);
+                var settings =  MongoClientSettings.FromConnectionString(ConnectionString);
+                settings.LinqProvider = LinqProvider.V2;
+                _client = new MongoClient(settings);
+                _database = _client.GetDatabase(string.IsNullOrWhiteSpace(DatabaseName) ? new MongoUrl(ConnectionString).DatabaseName : DatabaseName);
             }
             else
             {
